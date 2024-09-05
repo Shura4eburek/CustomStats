@@ -1,0 +1,10 @@
+name: CustomStats
+version: '1.0-SNAPSHOT'
+main: org.mamoru.customStats.CustomStats
+api-version: '1.21'
+commands:
+  stats:
+    description: Default stats command
+    usage: /<command>
+softdepend:
+  - PlaceholderAPI
