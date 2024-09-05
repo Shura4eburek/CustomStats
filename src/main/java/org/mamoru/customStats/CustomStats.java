@@ -10,8 +10,6 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
-import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
@@ -27,7 +25,7 @@ public class CustomStats extends JavaPlugin {
     public void onEnable() {
         createConfig();
 
-        // Регистрация команды
+        // Command registration
         String commandName = config.getString("command", "");
         if (commandName != null && !commandName.isEmpty()) {
             if (getCommand(commandName) != null) {
@@ -36,34 +34,34 @@ public class CustomStats extends JavaPlugin {
                 getLogger().severe("Команда " + commandName + " не найдена в plugin.yml");
             }
         } else {
-            getLogger().severe("Имя команды не указано в конфигурационном файле!");
+            getLogger().severe("The command name is not specified in the configuration file!");
         }
 
-        // Проверяем наличие PlaceholderAPI и регистрируем плейсхолдеры
+        // Checking for PlaceholderAPI and registering placeholders
         if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
             new CustomPlaceholderExpansion(this).register();
         } else {
-            getLogger().warning("PlaceholderAPI не найден. Плейсхолдеры не будут работать.");
+            getLogger().warning("PlaceholderAPI is not found. Placeholders won't work.");
         }
     }
 
     private void createConfig() {
-        // Загружаем или создаем конфигурационный файл
+        // Load or create a configuration file
         configFile = new File(getDataFolder(), "config.yml");
         if (!configFile.exists()) {
             try {
-                getDataFolder().mkdirs(); // Создаем папку плагина, если она не существует
+                getDataFolder().mkdirs(); // Create a plugin folder if it does not exist
                 configFile.createNewFile();
                 config = YamlConfiguration.loadConfiguration(configFile);
 
-                // Сохраняем дефолтный конфиг
+                // Save default config
                 config.set("command", "stats");
                 config.set("message", List.of(
                         "%player_name%",
-                        "Всего сыграно: %customstats_time_played_total%",
-                        "Текущий сеанс: %customstats_time_since_last_played%",
-                        "Дата регистрации: %customstats_first_join_date%",
-                        "Количество смертей: %customstats_deaths%"));
+                        "Total played: %customstats_time_played_total%",
+                        "Current session: %customstats_time_since_last_played%",
+                        "Registration date: %customstats_first_join_date%",
+                        "Count of deaths: %customstats_deaths%"));
                 config.save(configFile);
             } catch (IOException e) {
                 e.printStackTrace();
@@ -77,7 +75,7 @@ public class CustomStats extends JavaPlugin {
         @Override
         public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
             if (!(sender instanceof Player)) {
-                sender.sendMessage("Эту команду может использовать только игрок.");
+                sender.sendMessage("Only a player can use this command.");
                 return true;
             }
 
@@ -88,7 +86,7 @@ public class CustomStats extends JavaPlugin {
                 player.sendMessage("Default stats message");
             } else {
                 for (String message : messages) {
-                    // Замена плейсхолдеров через PlaceholderAPI
+                    // Placeholder replacement via PlaceholderAPI
                     String replacedMessage = PlaceholderAPI.setPlaceholders(player, message);
                     player.sendMessage(replacedMessage);
                 }
@@ -107,7 +105,7 @@ public class CustomStats extends JavaPlugin {
 
         @Override
         public @NotNull String getIdentifier() {
-            return "customstats"; // Идентификатор для использования плейсхолдеров, например %customstats_<placeholder>%
+            return "customstats"; // Identifier for placeholders, e.g. %customstats_<placeholder>%
         }
 
         @Override
@@ -122,12 +120,12 @@ public class CustomStats extends JavaPlugin {
 
         @Override
         public boolean persist() {
-            return true; // Плагин будет оставаться зарегистрированным
+            return true; // The plugin will remain registered
         }
 
         @Override
         public boolean canRegister() {
-            return true; // Разрешаем регистрацию плейсхолдеров
+            return true; // Allowing placeholders to register
         }
 
         @Override
@@ -136,34 +134,34 @@ public class CustomStats extends JavaPlugin {
                 return "";
             }
 
-            // Плейсхолдер для общего времени игры
+            // Placeholder for total game time
             if (identifier.equals("time_played_total")) {
                 long totalPlayTime = player.getStatistic(org.bukkit.Statistic.PLAY_ONE_MINUTE) / 20; // Время в секундах
                 return formatTime(totalPlayTime); // Форматируем в часы, минуты
             }
 
-            // Плейсхолдер для времени текущего сеанса
+            // Placeholder for the time of the current session
             if (identifier.equals("time_since_last_played")) {
                 long lastPlayed = (System.currentTimeMillis() - player.getLastPlayed()) / 1000; // Время в секундах
                 return formatTime(lastPlayed);
             }
 
-            // Плейсхолдер для даты первого входа
+            // Placeholder for first entry date
             if (identifier.equals("first_join_date")) {
                 return new java.text.SimpleDateFormat("dd.MM.yyyy").format(new java.util.Date(player.getFirstPlayed()));
             }
 
-            // Плейсхолдер для количества смертей
+            // Placeholder for count of deaths
             if (identifier.equals("deaths")) {
                 int deaths = player.getStatistic(org.bukkit.Statistic.DEATHS); // Получаем количество смертей
                 return String.valueOf(deaths);
             }
 
-            // Если плейсхолдер не найден, возвращаем null
+            // If the placeholder is not found, return null.
             return null;
         }
 
-        // Метод для форматирования времени в часы, минуты
+        // Method for formatting time into hours, minutes
         private String formatTime(long seconds) {
             long hours = seconds / 3600;
             long minutes = (seconds % 3600) / 60;
@@ -173,6 +171,6 @@ public class CustomStats extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        // Логика при отключении плагина (если нужно)
+        // Logic when disabling the plugin (if necessary)
     }
 }

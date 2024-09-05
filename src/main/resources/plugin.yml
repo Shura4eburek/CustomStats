@@ -1,5 +1,5 @@
 name: CustomStats
-version: '1.0-SNAPSHOT'
+version: '1.0'
 main: org.mamoru.customStats.CustomStats
 api-version: '1.21'
 commands:
