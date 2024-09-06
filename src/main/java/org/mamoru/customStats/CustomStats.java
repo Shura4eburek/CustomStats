@@ -1,6 +1,6 @@
 package org.mamoru.customStats;
 
-import me.clip.placeholderapi.PlaceholderAPI;
+
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -9,12 +9,19 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
+
+import me.clip.placeholderapi.PlaceholderAPI;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 public class CustomStats extends JavaPlugin {
 
@@ -39,7 +46,9 @@ public class CustomStats extends JavaPlugin {
 
         // Checking for PlaceholderAPI and registering placeholders
         if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
-            new CustomPlaceholderExpansion(this).register();
+            CustomPlaceholderExpansion expansion = new CustomPlaceholderExpansion(this);
+            expansion.register(); // Register placeholders
+            Bukkit.getPluginManager().registerEvents(expansion, this); // Register events
         } else {
             getLogger().warning("PlaceholderAPI is not found. Placeholders won't work.");
         }
@@ -95,9 +104,10 @@ public class CustomStats extends JavaPlugin {
         }
     }
 
-    public class CustomPlaceholderExpansion extends PlaceholderExpansion {
+    public class CustomPlaceholderExpansion extends PlaceholderExpansion implements Listener {
 
         private final CustomStats plugin;
+        private final Map<Player, Long> sessionStartTimes = new HashMap<>();
 
         public CustomPlaceholderExpansion(CustomStats plugin) {
             this.plugin = plugin;
@@ -105,7 +115,7 @@ public class CustomStats extends JavaPlugin {
 
         @Override
         public @NotNull String getIdentifier() {
-            return "customstats"; // Identifier for placeholders, e.g. %customstats_<placeholder>%
+            return "customstats";
         }
 
         @Override
@@ -120,12 +130,20 @@ public class CustomStats extends JavaPlugin {
 
         @Override
         public boolean persist() {
-            return true; // The plugin will remain registered
+            return true;
         }
 
         @Override
         public boolean canRegister() {
-            return true; // Allowing placeholders to register
+            return true;
+        }
+
+        // Event to track player's join time
+        @EventHandler
+        public void onPlayerJoin(PlayerJoinEvent event) {
+            Player player = event.getPlayer();
+            sessionStartTimes.put(player, System.currentTimeMillis()); // Store the session start time
+            System.out.println("Player " + player.getName() + " joined. Session start time recorded.");
         }
 
         @Override
@@ -136,24 +154,29 @@ public class CustomStats extends JavaPlugin {
 
             // Placeholder for total game time
             if (identifier.equals("time_played_total")) {
-                long totalPlayTime = player.getStatistic(org.bukkit.Statistic.PLAY_ONE_MINUTE) / 20; // Время в секундах
-                return formatTime(totalPlayTime); // Форматируем в часы, минуты
+                long totalPlayTime = player.getStatistic(org.bukkit.Statistic.PLAY_ONE_MINUTE) / 20; // Time in seconds
+                return formatTime(totalPlayTime); // Format into hours, minutes
             }
 
             // Placeholder for the time of the current session
             if (identifier.equals("time_since_last_played")) {
-                long lastPlayed = (System.currentTimeMillis() - player.getLastPlayed()) / 1000; // Время в секундах
-                return formatTime(lastPlayed);
+                Long sessionStartTime = sessionStartTimes.get(player);
+                if (sessionStartTime != null) {
+                    long sessionDuration = (System.currentTimeMillis() - sessionStartTime) / 1000; // Time in seconds
+                    return formatTime(sessionDuration);
+                } else {
+                    return "Session time not available";
+                }
             }
 
-            // Placeholder for first entry date
+            // Placeholder for first join date
             if (identifier.equals("first_join_date")) {
                 return new java.text.SimpleDateFormat("dd.MM.yyyy").format(new java.util.Date(player.getFirstPlayed()));
             }
 
             // Placeholder for count of deaths
             if (identifier.equals("deaths")) {
-                int deaths = player.getStatistic(org.bukkit.Statistic.DEATHS); // Получаем количество смертей
+                int deaths = player.getStatistic(org.bukkit.Statistic.DEATHS); // Get the number of deaths
                 return String.valueOf(deaths);
             }
 
@@ -161,11 +184,11 @@ public class CustomStats extends JavaPlugin {
             return null;
         }
 
-        // Method for formatting time into hours, minutes
+        // Method for formatting time into hours and minutes
         private String formatTime(long seconds) {
             long hours = seconds / 3600;
             long minutes = (seconds % 3600) / 60;
-            return hours + " ч " + minutes + " мин";
+            return hours + " h " + minutes + " min";
         }
     }
 
